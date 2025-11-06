@@ -1,0 +1,10 @@
+[workspace]
+
+members = ["core", "minitorch-examples"]
+
+# Let's set the resolver to the modern version.
+resolver = "2"
+
+[workspace.dependencies]
+ndarray = "0.17.1" # `ndarray` will be our workhorse for tensor math on the CPU.
+rand = "0.9.2"     # For random weight initialization
