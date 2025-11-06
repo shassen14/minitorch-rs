@@ -6,3 +6,8 @@ edition = "2024"
 [dependencies]
 core = { path = "../core" }
 ndarray = { workspace = true }
+
+# Not Necessary. Might use if I have directories in bin
+# [[bin]]
+# name = "phase2_graph_building"
+# path = "src/bin/phase2_graph_building.rs"

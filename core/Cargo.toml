@@ -6,3 +6,4 @@ edition = "2024"
 [dependencies]
 ndarray = { workspace = true }
 rand = { workspace = true }
+dyn-clone = { workspace = true }

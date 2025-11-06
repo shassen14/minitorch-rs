@@ -1,11 +1,16 @@
 //! Defines the `Backend` trait, which abstracts over the computational engine.
 use ndarray::{ArrayD, IxDyn};
+use std::fmt::Debug;
 
-pub trait Backend: Default + Sized {
-    type TensorData;
+pub trait Backend: Default + Sized + Clone + Copy {
+    type TensorData: Clone + Debug;
 
+    // Operations
     fn add(&self, a: &Self::TensorData, b: &Self::TensorData) -> Self::TensorData;
 
+    fn mul(&self, a: &Self::TensorData, b: &Self::TensorData) -> Self::TensorData;
+
+    // Conversion and accessor methods
     fn from_slice(&self, data: &[f32], shape: &[usize]) -> Self::TensorData;
 
     fn to_vec(&self, tensor: &Self::TensorData) -> Vec<f32>;
@@ -24,6 +29,10 @@ impl Backend for NdArrayBackend {
 
     fn add(&self, a: &Self::TensorData, b: &Self::TensorData) -> Self::TensorData {
         a + b
+    }
+
+    fn mul(&self, a: &Self::TensorData, b: &Self::TensorData) -> Self::TensorData {
+        a * b
     }
 
     fn from_slice(&self, data: &[f32], shape: &[usize]) -> Self::TensorData {

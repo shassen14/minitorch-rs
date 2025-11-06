@@ -46,9 +46,9 @@ The project will be built in the following phases:
     -   [x] Implement basic operator overloading (e.g., `+`).
 
 -   **Phase 2: The Computational Graph**
-    -   [ ] Augment `Tensor` to store its history (`_children` and `_op`).
-    -   [ ] Implement a `trait Op` for operations.
-    -   [ ] Implement the graph-building logic for `Add` and `Mul`.
+    -   [x] Augment `Tensor` to store its history (`_children` and `_op`).
+    -   [x] Implement a `trait Op` for operations.
+    -   [x] Implement the graph-building logic for `Add` and `Mul`.
 
 -   **Phase 3: Backpropagation**
     -   [ ] Implement a topological sort for the computational graph.
