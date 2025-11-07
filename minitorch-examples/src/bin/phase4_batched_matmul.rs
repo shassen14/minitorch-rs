@@ -4,7 +4,7 @@
 //! multiple data points (a "batch") simultaneously using matrix multiplication.
 
 use core::backend::NdArrayBackend;
-use core::nn::Linear;
+use core::nn::{Linear, Module};
 use core::tensor::Tensor;
 
 fn main() {
