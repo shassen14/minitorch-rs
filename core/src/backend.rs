@@ -8,7 +8,7 @@
 //!
 //! This is a form of **Policy-Based Design**.
 
-use ndarray::{ArrayD, IxDyn};
+use ndarray::{ArrayD, IxDyn, linalg::Dot};
 use std::fmt::Debug;
 
 /// The `Backend` trait defines the contract for a computational engine.
@@ -37,6 +37,18 @@ pub trait Backend: Default + Sized + Clone + Copy {
 
     /// Performs element-wise multiplication of two tensors.
     fn mul(&self, a: &Self::TensorData, b: &Self::TensorData) -> Self::TensorData;
+
+    /// Performs matrix multiplication.
+    fn matmul(&self, a: &Self::TensorData, b: &Self::TensorData) -> Self::TensorData;
+
+    /// Applies the Rectified Linear Unit (ReLU) activation function element-wise.
+    fn relu(&self, a: &Self::TensorData) -> Self::TensorData;
+
+    /// Returns a tensor of 1s where a > scalar, and 0s otherwise. Used for ReLU backward pass.
+    fn gt_scalar(&self, a: &Self::TensorData, scalar: f32) -> Self::TensorData;
+
+    /// Transposes a tensor by swapping two axes.
+    fn transpose(&self, a: &Self::TensorData, axis1: usize, axis2: usize) -> Self::TensorData;
 
     // --- Data Management & Creation ---
     // These methods handle the lifecycle of tensor data.
@@ -87,6 +99,28 @@ impl Backend for NdArrayBackend {
     /// `ndarray` overloads the `*` operator for element-wise multiplication.
     fn mul(&self, a: &Self::TensorData, b: &Self::TensorData) -> Self::TensorData {
         a * b
+    }
+
+    /// Performs matrix multiplication.
+    fn matmul(&self, a: &Self::TensorData, b: &Self::TensorData) -> Self::TensorData {
+        a.dot(b)
+    }
+
+    /// Applies the Rectified Linear Unit (ReLU) activation function element-wise.
+    fn relu(&self, a: &Self::TensorData) -> Self::TensorData {
+        a.mapv(|x| x.max(0.0)) // `mapv` applies a closure to each element.
+    }
+
+    /// Returns a tensor of 1s where a > scalar, and 0s otherwise. Used for ReLU backward pass.
+    fn gt_scalar(&self, a: &Self::TensorData, scalar: f32) -> Self::TensorData {
+        a.mapv(|x| if x > scalar { 1.0 } else { 0.0 })
+    }
+
+    /// Transposes a tensor by swapping two axes.
+    fn transpose(&self, a: &Self::TensorData, axis1: usize, axis2: usize) -> Self::TensorData {
+        let mut axes: Vec<_> = (0..a.ndim()).collect();
+        axes.swap(axis1, axis2);
+        a.clone().permuted_axes(axes)
     }
 
     /// `ndarray`'s constructor to create an array from the shape and vector data.
