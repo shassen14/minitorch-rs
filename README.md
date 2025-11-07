@@ -75,3 +75,20 @@ Once the core framework is complete and proven with the XOR milestone, the follo
 -   **GPU Backend:** Creating a `WgpuBackend` that implements the `Backend` trait, allowing the entire framework to run computations on the GPU.
 -   **More Optimizers:** Adding other common optimizers like Adam.
 -   **Serialization:** Adding the ability to save and load trained model weights.
+-   
+
+## Architectural Decisions
+
+### Concurrency Model: Single-Threaded by Design
+
+This framework is intentionally designed for a **single-threaded** context. The core `Tensor` data structure uses `Rc<RefCell<T>>` for managing the computational graph.
+
+-   **`Rc` (Reference Counted):** Allows multiple `Tensor` objects to share ownership of the underlying data and graph structure. It is fast but not thread-safe.
+-   **`RefCell` (Interior Mutability):** Allows for mutating data (like gradients) even when it's shared. The borrowing rules are checked at *runtime*, and it is also not thread-safe.
+
+**Why this approach?**
+1.  **Focus:** The primary goal of this project is to learn the architecture of the autograd engine. A single-threaded design is far simpler and allows us to focus on the core backpropagation logic.
+2.  **Performance:** For many CPU-bound tasks, the real parallelism comes from *within* a single operation (e.g., a multi-threaded matrix multiplication), which is handled by the `ndarray` backend. The graph itself does not need to be multi-threaded.
+
+**Future Extension (Out of Scope for V1.0):**
+A thread-safe version of this framework would require replacing `Rc<RefCell<T>>` with its thread-safe equivalents: `Arc<Mutex<T>>` or `Arc<RwLock<T>>`. This would allow the model's parameters to be safely shared and updated across multiple threads, which is essential for applications like a multi-threaded inference server
