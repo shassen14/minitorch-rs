@@ -1,7 +1,7 @@
 //! Defines the generic Tensor struct, the central data structure of the framework.
 
 use crate::backend::Backend;
-use crate::op::{MatMul, Op, ReLU};
+use crate::op::{MatMul, Mean, Op, Pow, ReLU, Sub};
 use std::cell::RefCell;
 use std::collections::HashSet;
 use std::fmt::Debug;
@@ -318,7 +318,55 @@ pub fn matmul<B: Backend + Default>(a: &Tensor<B>, b: &Tensor<B>) -> Tensor<B> {
             data: result_data,
             grad: None,
             _children: vec![a.clone(), b.clone()],
-            _op: Some(Box::new(MatMul)), // You'll need to create the `MatMul` op struct
+            _op: Some(Box::new(MatMul)),
         })),
+    }
+}
+
+pub fn sub<B: Backend + Default>(a: &Tensor<B>, b: &Tensor<B>) -> Tensor<B> {
+    let backend = B::default();
+    let result_data = backend.sub(&a.inner.borrow().data, &b.inner.borrow().data);
+    Tensor {
+        inner: Rc::new(RefCell::new(TensorInner {
+            data: result_data,
+            grad: None,
+            _children: vec![a.clone(), b.clone()],
+            _op: Some(Box::new(Sub)),
+        })),
+    }
+}
+
+pub fn pow<B: Backend + Default>(a: &Tensor<B>, power: f32) -> Tensor<B> {
+    let backend = B::default();
+    let power_tensor: Tensor<B> = Tensor::new(&[power], &[1]);
+    let result_data = backend.pow(&a.inner.borrow().data, &power_tensor.inner.borrow().data);
+    Tensor {
+        inner: Rc::new(RefCell::new(TensorInner {
+            data: result_data,
+            grad: None,
+            _children: vec![a.clone()],
+            _op: Some(Box::new(Pow { power })),
+        })),
+    }
+}
+
+pub fn mean<B: Backend + Default>(a: &Tensor<B>) -> Tensor<B> {
+    let backend = B::default();
+    let result_data = backend.mean(&a.inner.borrow().data);
+    Tensor {
+        inner: Rc::new(RefCell::new(TensorInner {
+            data: result_data,
+            grad: None,
+            _children: vec![a.clone()],
+            _op: Some(Box::new(Mean)),
+        })),
+    }
+}
+
+// --- Add the operator overloads ---
+impl<B: Backend + Default> std::ops::Sub for &Tensor<B> {
+    type Output = Tensor<B>;
+    fn sub(self, rhs: Self) -> Self::Output {
+        sub(self, rhs)
     }
 }

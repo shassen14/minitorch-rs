@@ -35,8 +35,14 @@ pub trait Backend: Default + Sized + Clone + Copy {
     /// Performs element-wise addition of two tensors.
     fn add(&self, a: &Self::TensorData, b: &Self::TensorData) -> Self::TensorData;
 
+    fn sub(&self, a: &Self::TensorData, b: &Self::TensorData) -> Self::TensorData;
+
     /// Performs element-wise multiplication of two tensors.
     fn mul(&self, a: &Self::TensorData, b: &Self::TensorData) -> Self::TensorData;
+
+    fn pow(&self, a: &Self::TensorData, b: &Self::TensorData) -> Self::TensorData;
+
+    fn mean(&self, a: &Self::TensorData) -> Self::TensorData;
 
     /// Performs matrix multiplication.
     fn matmul(&self, a: &Self::TensorData, b: &Self::TensorData) -> Self::TensorData;
@@ -49,6 +55,8 @@ pub trait Backend: Default + Sized + Clone + Copy {
 
     /// Transposes a tensor by swapping two axes.
     fn transpose(&self, a: &Self::TensorData, axis1: usize, axis2: usize) -> Self::TensorData;
+
+    fn expand(&self, a: &Self::TensorData, shape: &[usize]) -> Self::TensorData;
 
     // --- Data Management & Creation ---
     // These methods handle the lifecycle of tensor data.
@@ -96,9 +104,30 @@ impl Backend for NdArrayBackend {
         a + b
     }
 
+    fn sub(&self, a: &Self::TensorData, b: &Self::TensorData) -> Self::TensorData {
+        a - b
+    }
+
     /// `ndarray` overloads the `*` operator for element-wise multiplication.
     fn mul(&self, a: &Self::TensorData, b: &Self::TensorData) -> Self::TensorData {
         a * b
+    }
+
+    fn pow(&self, a: &Self::TensorData, b: &Self::TensorData) -> Self::TensorData {
+        // `b` must be a scalar for ndarray's `pow`
+        let power = b.as_slice().unwrap()[0];
+        a.mapv(|x| x.powf(power))
+    }
+
+    fn mean(&self, a: &Self::TensorData) -> Self::TensorData {
+        let mean_val = a.mean().unwrap();
+        ndarray::arr0(mean_val).into_dyn()
+    }
+
+    fn expand(&self, a: &Self::TensorData, shape: &[usize]) -> Self::TensorData {
+        // ndarray handles broadcasting automatically in most ops, but an explicit
+        // `broadcast` creates a view. We need to create an owned array.
+        a.broadcast(IxDyn(shape)).unwrap().to_owned()
     }
 
     /// Performs matrix multiplication.

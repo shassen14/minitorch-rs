@@ -71,6 +71,25 @@ impl<B: Backend> Op<B> for Add {
     }
 }
 
+// --- Subtract Operation ---
+#[derive(Debug, Clone)]
+pub struct Sub;
+impl<B: Backend> Op<B> for Sub {
+    fn backward(
+        &self,
+        upstream_grad: &B::TensorData,
+        _inputs: &[&B::TensorData],
+    ) -> Vec<B::TensorData> {
+        // dL/da = dL/dc * dc/da = upstream_grad * 1.0
+        // dL/db = dL/dc * dc/db = upstream_grad * -1.0
+        let backend = B::default();
+        // Create a scalar tensor of -1
+        let neg_one = backend.from_slice(&[-1.0], &[1]);
+        let grad_b = backend.mul(upstream_grad, &neg_one);
+        vec![upstream_grad.clone(), grad_b]
+    }
+}
+
 // --- Multiply Operation ---
 // A zero-sized struct to represent element-wise multiplication.
 #[derive(Debug, Clone)]
@@ -98,6 +117,52 @@ impl<B: Backend> Op<B> for Mul {
         let grad_b = backend.mul(upstream_grad, a_data);
 
         vec![grad_a, grad_b]
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct Pow {
+    pub power: f32,
+}
+impl<B: Backend> Op<B> for Pow {
+    fn backward(
+        &self,
+        upstream_grad: &B::TensorData,
+        inputs: &[&B::TensorData],
+    ) -> Vec<B::TensorData> {
+        // For y = x^n, dy/dx = n * x^(n-1)
+        // dL/dx = dL/dy * dy/dx = upstream_grad * (n * x^(n-1))
+        let base = inputs[0];
+        let backend = B::default();
+
+        let n = backend.from_slice(&[self.power], &[1]);
+        let n_minus_1 = backend.from_slice(&[self.power - 1.0], &[1]);
+
+        let pow_term = backend.pow(base, &n_minus_1);
+        let factor = backend.mul(&n, &pow_term);
+        let grad = backend.mul(upstream_grad, &factor);
+        vec![grad]
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct Mean;
+impl<B: Backend> Op<B> for Mean {
+    fn backward(
+        &self,
+        upstream_grad: &B::TensorData,
+        inputs: &[&B::TensorData],
+    ) -> Vec<B::TensorData> {
+        // If y = mean(x), dy/dx_i = 1/N for all i.
+        // dL/dx_i = dL/dy * dy/dx_i = upstream_grad * (1/N)
+        let input = inputs[0];
+        let backend = B::default();
+        let n = backend.shape(input).iter().product::<usize>() as f32;
+        let n_inv = backend.from_slice(&[1.0 / n], &[1]);
+        let grad = backend.mul(upstream_grad, &n_inv);
+        // This gradient needs to be broadcasted to the shape of the input.
+        let broadcasted_grad = backend.expand(&grad, backend.shape(input));
+        vec![broadcasted_grad]
     }
 }
 

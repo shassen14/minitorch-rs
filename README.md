@@ -56,10 +56,10 @@ The project will be built in the following phases:
     -   [x] Implement the `backward()` pass for `Add` and `Mul`.
 
 -   **Phase 4: Building a Neural Network**
-    -   [ ] Implement `MatMul` and `ReLU` operations.
-    -   [ ] Create a `trait Module` for neural network layers.
-    -   [ ] Implement a `Linear` layer.
-    -   [ ] Implement a `MeanSquaredError` loss function.
+    -   [x] Implement `MatMul` and `ReLU` operations.
+    -   [x] Create a `trait Module` for neural network layers.
+    -   [x] Implement a `Linear` layer.
+    -   [x] Implement a `MeanSquaredError` loss function.
 
 -   **Phase 5: Training**
     -   [ ] Implement an `SGD` optimizer.
