@@ -51,9 +51,9 @@ The project will be built in the following phases:
     -   [x] Implement the graph-building logic for `Add` and `Mul`.
 
 -   **Phase 3: Backpropagation**
-    -   [ ] Implement a topological sort for the computational graph.
-    -   [ ] Implement the `Tensor.backward()` method.
-    -   [ ] Implement the `backward()` pass for `Add` and `Mul`.
+    -   [x] Implement a topological sort for the computational graph.
+    -   [x] Implement the `Tensor.backward()` method.
+    -   [x] Implement the `backward()` pass for `Add` and `Mul`.
 
 -   **Phase 4: Building a Neural Network**
     -   [ ] Implement `MatMul` and `ReLU` operations.
