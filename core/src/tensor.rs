@@ -1,7 +1,7 @@
 //! Defines the generic Tensor struct, the central data structure of the framework.
 
 use crate::backend::Backend;
-use crate::op::Op;
+use crate::op::{MatMul, Op, ReLU};
 use std::cell::RefCell;
 use std::collections::HashSet;
 use std::fmt::Debug;
@@ -294,5 +294,31 @@ impl<B: Backend + Default> std::ops::Mul for &Tensor<B> {
     type Output = Tensor<B>;
     fn mul(self, rhs: Self) -> Self::Output {
         mul(self, rhs)
+    }
+}
+
+pub fn relu<B: Backend + Default>(a: &Tensor<B>) -> Tensor<B> {
+    let backend = B::default();
+    let result_data = backend.relu(&a.inner.borrow().data);
+    Tensor {
+        inner: Rc::new(RefCell::new(TensorInner {
+            data: result_data,
+            grad: None,
+            _children: vec![a.clone()],
+            _op: Some(Box::new(ReLU)),
+        })),
+    }
+}
+
+pub fn matmul<B: Backend + Default>(a: &Tensor<B>, b: &Tensor<B>) -> Tensor<B> {
+    let backend = B::default();
+    let result_data = backend.matmul(&a.inner.borrow().data, &b.inner.borrow().data);
+    Tensor {
+        inner: Rc::new(RefCell::new(TensorInner {
+            data: result_data,
+            grad: None,
+            _children: vec![a.clone(), b.clone()],
+            _op: Some(Box::new(MatMul)), // You'll need to create the `MatMul` op struct
+        })),
     }
 }
