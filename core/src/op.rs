@@ -100,3 +100,54 @@ impl<B: Backend> Op<B> for Mul {
         vec![grad_a, grad_b]
     }
 }
+
+// --- ReLU Operation ---
+// A zero-sized struct to represent ReLU.
+#[derive(Debug, Clone)]
+pub struct ReLU;
+
+impl<B: Backend> Op<B> for ReLU {
+    fn backward(
+        &self,
+        upstream_grad: &B::TensorData,
+        inputs: &[&B::TensorData],
+    ) -> Vec<B::TensorData> {
+        let input_data = inputs[0];
+        let backend = B::default();
+
+        let mask = backend.gt_scalar(input_data, 0.0);
+        let grad_a = backend.mul(upstream_grad, &mask);
+
+        vec![grad_a]
+    }
+}
+
+// --- Matrix Multiplication Operation ---
+#[derive(Debug, Clone)]
+pub struct MatMul;
+impl<B: Backend> Op<B> for MatMul {
+    fn backward(
+        &self,
+        upstream_grad: &B::TensorData,
+        inputs: &[&B::TensorData],
+    ) -> Vec<B::TensorData> {
+        // Let the forward pass be `C = A @ B`.
+        // The chain rule gives us the gradients with respect to the inputs A and B:
+        // grad(A) = grad(C) @ B.T
+        // grad(B) = A.T @ grad(C)
+
+        let a_data = inputs[0];
+        let b_data = inputs[1];
+        let backend = B::default();
+
+        let b_shape = backend.shape(b_data);
+        let b_transposed = backend.transpose(b_data, b_shape.len() - 2, b_shape.len() - 1);
+        let grad_a = backend.matmul(upstream_grad, &b_transposed);
+
+        let a_shape = backend.shape(a_data);
+        let a_transposed = backend.transpose(a_data, a_shape.len() - 2, a_shape.len() - 1);
+        let grad_b = backend.matmul(&a_transposed, upstream_grad);
+
+        vec![grad_a, grad_b]
+    }
+}
